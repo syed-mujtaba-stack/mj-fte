@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import { trackPageview, trackEvent } from '@/lib/analytics';
 import { Route, Switch, Link, useLocation, Router as WouterRouter } from 'wouter';
 import {
   AlertTriangle,
@@ -39,7 +40,7 @@ const CHANGELOG = 'https://github.com/syed-mujtaba-stack/mj-fte/blob/main/CHANGE
 const INSTALL = 'pip install mj-fte';
 
 function ExternalAnchor({ href, children, className = '', label }: { href: string; children: ReactNode; className?: string; label?: string }) {
-  return <a data-testid={label ?? 'link-external'} href={href} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>;
+  return <a data-testid={label ?? 'link-external'} href={href} target="_blank" rel="noopener noreferrer" className={className} onClick={() => trackEvent('outbound_click', { label: label ?? 'link-external', url: href })}>{children}</a>;
 }
 
 function Logo() {
@@ -338,6 +339,7 @@ function Footer() {
 function Router() {
   const [location] = useLocation();
   useEffect(() => { if (!location.includes('#')) window.scrollTo(0, 0); }, [location]);
+  useEffect(() => { trackPageview(location); }, [location]);
   return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route path="/docs" component={Docs} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
 }
 
