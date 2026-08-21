@@ -11,3 +11,7 @@ wheels/
 
 # Secrets
 .env
+
+# Node / Web
+node_modules/
+apps/web/dist
