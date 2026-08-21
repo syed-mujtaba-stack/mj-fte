@@ -5,9 +5,13 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+_appdata_dir = Path(os.getenv("APPDATA", str(Path.home()))) / "MJ_FTE"
+_env_file_paths = (".env", str(_appdata_dir / ".env"))
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_env_file_paths,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -15,7 +19,7 @@ class Settings(BaseSettings):
 
     # App
     app_name: str = "MJ FTE"
-    app_version: str = "0.1.0"
+    app_version: str = "0.1.1"
     config_dir: Path = Field(
         default_factory=lambda: Path(os.getenv("APPDATA", Path.home())) / "MJ_FTE"
     )
@@ -164,3 +168,18 @@ settings = Settings()
 # Ensure directories exist
 settings.config_dir.mkdir(parents=True, exist_ok=True)
 settings.data_dir.mkdir(parents=True, exist_ok=True)
+
+
+def save_oauth_credentials(client_id: str, client_secret: str) -> Path:
+    env_path = settings.config_dir / ".env"
+    lines: List[str] = []
+    if env_path.exists():
+        content = env_path.read_text(encoding="utf-8")
+        lines = [
+            line for line in content.splitlines()
+            if not line.strip().startswith(("GOOGLE_CLIENT_ID=", "GOOGLE_CLIENT_SECRET="))
+        ]
+    lines.insert(0, f"GOOGLE_CLIENT_SECRET={client_secret}")
+    lines.insert(0, f"GOOGLE_CLIENT_ID={client_id}")
+    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return env_path

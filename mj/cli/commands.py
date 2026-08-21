@@ -49,12 +49,32 @@ def init(force: bool):
             return
 
     if not settings.google_client_id or not settings.google_client_secret:
-        console.print("[red][X] Google OAuth credentials not configured![/]")
-        console.print("\nPlease set these environment variables or create a .env file:")
-        console.print("  GOOGLE_CLIENT_ID=your_client_id")
-        console.print("  GOOGLE_CLIENT_SECRET=your_client_secret")
-        console.print("\nGet credentials from: https://console.cloud.google.com/apis/credentials")
-        return
+        console.print("Google OAuth credentials not configured.")
+        console.print("\nGet credentials from: [cyan]https://console.cloud.google.com/apis/credentials[/]")
+        console.print("(Web application type, redirect URI: http://localhost:8080/callback)\n")
+
+        if console.confirm("Start one-time setup wizard now?", default=True):
+            client_id = console.prompt("Paste GOOGLE_CLIENT_ID").strip()
+            client_secret = console.prompt("Paste GOOGLE_CLIENT_SECRET", password=True).strip()
+
+            if not client_id or not client_secret:
+                console.print("[red]Both values are required. Aborting.[/]")
+                return
+
+            from mj.config.settings import save_oauth_credentials
+            env_path = save_oauth_credentials(client_id, client_secret)
+            settings.google_client_id = client_id
+            settings.google_client_secret = client_secret
+            console.print(f"\n[green]Credentials saved to:[/] {env_path}")
+            console.print("(Works from any directory from now on)\n")
+        else:
+            console.print("\nManual setup: create a .env file in any of these locations:")
+            console.print(f"  1. {settings.config_dir / '.env'}")
+            console.print("  2. ./.env (current directory)")
+            console.print("With contents:")
+            console.print("  GOOGLE_CLIENT_ID=your_client_id")
+            console.print("  GOOGLE_CLIENT_SECRET=your_client_secret")
+            return
 
     success = oauth.authenticate()
     if success:

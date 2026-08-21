@@ -75,7 +75,15 @@ cp .env.example .env
 ```bash
 mj init
 ```
-Opens browser for Google authentication. Tokens stored securely in Windows Credential Manager.
+
+If Google credentials are not configured yet, a **one-time setup wizard** starts:
+1. Paste your `GOOGLE_CLIENT_ID`
+2. Paste your `GOOGLE_CLIENT_SECRET` (hidden input)
+3. Credentials are saved to `%APPDATA%\MJ_FTE\.env` — works from any directory afterwards
+
+Then the browser opens for **Continue with Google** login. Tokens stored securely in Windows Credential Manager.
+
+> Manual alternative: create `.env` in `%APPDATA%\MJ_FTE\` (or current directory) with `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
 ### Analyze System
 ```bash

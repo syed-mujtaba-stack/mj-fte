@@ -118,8 +118,8 @@ class MJConsole:
     def confirm(self, message: str, default: bool = True) -> bool:
         return Confirm.ask(f"[bold yellow]{message}[/]", default=default)
 
-    def prompt(self, message: str, default: str = "") -> str:
-        return Prompt.ask(f"[bold cyan]{message}[/]", default=default)
+    def prompt(self, message: str, default: str = "", password: bool = False) -> str:
+        return Prompt.ask(f"[bold cyan]{message}[/]", default=default, password=password)
 
     def _format_size(self, size: int) -> str:
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
