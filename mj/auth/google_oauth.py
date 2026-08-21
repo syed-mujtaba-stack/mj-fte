@@ -10,7 +10,6 @@ from urllib.parse import urlparse, parse_qs
 import threading
 import time
 
-import keyring
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -146,18 +145,46 @@ class GoogleOAuth:
         self._flow.fetch_token(code=code)
         return OAuthToken.from_credentials(self._flow.credentials)
 
+    def _token_to_dict(self, token: OAuthToken) -> dict:
+        data = asdict(token)
+        data.pop("id_token", None)
+        return data
+
+    @property
+    def _token_file(self) -> Path:
+        return settings.config_dir / "token.json"
+
+    @property
+    def _user_file(self) -> Path:
+        return settings.config_dir / "user.json"
+
     def save_token(self, token: OAuthToken):
-        keyring.set_password(self.SERVICE_NAME, self.TOKEN_KEY, json.dumps(asdict(token)))
+        settings.config_dir.mkdir(parents=True, exist_ok=True)
+        self._token_file.write_text(json.dumps(self._token_to_dict(token)), encoding="utf-8")
 
     def load_token(self) -> Optional[OAuthToken]:
-        data = keyring.get_password(self.SERVICE_NAME, self.TOKEN_KEY)
-        if data:
-            return OAuthToken(**json.loads(data))
+        if self._token_file.exists():
+            try:
+                return OAuthToken(**json.loads(self._token_file.read_text(encoding="utf-8")))
+            except Exception:
+                return None
         return None
 
     def delete_token(self):
-        keyring.delete_password(self.SERVICE_NAME, self.TOKEN_KEY)
-        keyring.delete_password(self.SERVICE_NAME, self.USER_KEY)
+        self._token_file.unlink(missing_ok=True)
+        self._user_file.unlink(missing_ok=True)
+
+    def save_user(self, user: UserInfo):
+        settings.config_dir.mkdir(parents=True, exist_ok=True)
+        self._user_file.write_text(json.dumps(asdict(user)), encoding="utf-8")
+
+    def load_user(self) -> Optional[UserInfo]:
+        if self._user_file.exists():
+            try:
+                return UserInfo(**json.loads(self._user_file.read_text(encoding="utf-8")))
+            except Exception:
+                return None
+        return None
 
     def save_user(self, user: UserInfo):
         keyring.set_password(self.SERVICE_NAME, self.USER_KEY, json.dumps(asdict(user)))
@@ -225,10 +252,14 @@ class GoogleOAuth:
             token = self.exchange_code(self._flow.authorization_code)
             self.save_token(token)
 
-            creds = token.to_credentials()
-            from googleapiclient.discovery import build
-            service = build("oauth2", "v2", credentials=creds)
-            user_info = service.userinfo().get().execute()
+            import requests as _requests
+            resp = _requests.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {token.access_token}"},
+                timeout=15,
+            )
+            resp.raise_for_status()
+            user_info = resp.json()
 
             user = UserInfo(
                 sub=user_info["id"],

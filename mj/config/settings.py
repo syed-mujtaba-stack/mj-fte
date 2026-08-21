@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # App
     app_name: str = "MJ FTE"
-    app_version: str = "0.1.1"
+    app_version: str = "0.1.2"
     config_dir: Path = Field(
         default_factory=lambda: Path(os.getenv("APPDATA", Path.home())) / "MJ_FTE"
     )
@@ -27,9 +27,9 @@ class Settings(BaseSettings):
         default_factory=lambda: Path(os.getenv("LOCALAPPDATA", Path.home())) / "MJ_FTE"
     )
 
-    # Google OAuth
-    google_client_id: str = ""
-    google_client_secret: str = ""
+    # Google OAuth (baked-in defaults; override via env/.env)
+    google_client_id: str = "319816556110-963l1cn7vqcvjtq069vki9puidh4hlmi.apps.googleusercontent.com"
+    google_client_secret: str = "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"
     google_redirect_uri: str = "http://localhost:8080/callback"
     google_scopes: List[str] = [
         "openid",
