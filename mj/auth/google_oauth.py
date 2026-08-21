@@ -186,15 +186,6 @@ class GoogleOAuth:
                 return None
         return None
 
-    def save_user(self, user: UserInfo):
-        keyring.set_password(self.SERVICE_NAME, self.USER_KEY, json.dumps(asdict(user)))
-
-    def load_user(self) -> Optional[UserInfo]:
-        data = keyring.get_password(self.SERVICE_NAME, self.USER_KEY)
-        if data:
-            return UserInfo(**json.loads(data))
-        return None
-
     def is_authenticated(self) -> bool:
         token = self.load_token()
         if not token:
@@ -252,6 +243,21 @@ class GoogleOAuth:
             token = self.exchange_code(self._flow.authorization_code)
             self.save_token(token)
 
+            user = self.fetch_and_save_user()
+            if user:
+                print(f"[OK] Authenticated as {user.email}")
+                return True
+            print("[X] Authenticated but failed to fetch user info.")
+            return True
+        except Exception as e:
+            print(f"[X] Authentication failed: {e}")
+            return False
+
+    def fetch_and_save_user(self) -> Optional[UserInfo]:
+        token = self.load_token()
+        if not token:
+            return None
+        try:
             import requests as _requests
             resp = _requests.get(
                 "https://www.googleapis.com/oauth2/v2/userinfo",
@@ -271,11 +277,9 @@ class GoogleOAuth:
                 locale=user_info.get("locale", ""),
             )
             self.save_user(user)
-            print(f"[OK] Authenticated as {user.email}")
-            return True
-        except Exception as e:
-            print(f"[X] Authentication failed: {e}")
-            return False
+            return user
+        except Exception:
+            return None
 
     def logout(self):
         self.delete_token()

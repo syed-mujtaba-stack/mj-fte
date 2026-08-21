@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # App
     app_name: str = "MJ FTE"
-    app_version: str = "0.1.2"
+    app_version: str = "0.1.3"
     config_dir: Path = Field(
         default_factory=lambda: Path(os.getenv("APPDATA", Path.home())) / "MJ_FTE"
     )

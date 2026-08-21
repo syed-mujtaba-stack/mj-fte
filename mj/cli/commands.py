@@ -43,6 +43,8 @@ def init(force: bool):
 
     if oauth.is_authenticated() and not force:
         user = oauth.load_user()
+        if not user:
+            user = oauth.fetch_and_save_user()
         if user:
             console.print(f"[OK] Already authenticated as [bold]{user.email}[/]")
             console.print("Use [bold]mj init --force[/] to re-authenticate.")
